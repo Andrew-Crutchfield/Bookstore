@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "categoryid": 1,
+    "title": "Dune",
+    "author": "Frank Herbert",
+    "price": 19.99,
+    "created_at": "2024-02-19T15:40:36.000Z"
+  },
+  {
+    "id": 2,
+    "categoryid": 2,
+    "title": "The Girl with the Dragon Tattoo",
+    "author": "Stieg Larsson",
+    "price": "15.99",
+    "created_at": "2024-02-19T15:40:36.000Z"
+  },
+  {
+    "id": 3,
+    "categoryid": 3,
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "price": "12.99",
+    "created_at": "2024-02-19T15:40:36.000Z"
+  }
+]

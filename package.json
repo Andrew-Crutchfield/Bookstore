@@ -11,7 +11,10 @@
 		"build:client": "node esbuild-config/client.prod.mjs",
 		"build:server": "node esbuild-config/server.prod.mjs",
 		"build": "npm-run-all --sequential build:*",
-		"start": "node dist/server.js"
+		"start": "node dist/server.js",
+		"predeploy": "npm run build",
+		"deploy": "gh-pages -d build",
+		"clean": "gh-pages-clean"
 	},
 	"keywords": [
 		"typescript",

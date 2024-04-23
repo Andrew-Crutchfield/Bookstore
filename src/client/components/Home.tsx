@@ -1,38 +1,56 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { POST } from '../services/fetcher';
+import bcrypt from 'bcryptjs'; // Import bcryptjs library
 
-const HomePage: React.FC = () => {
+interface HomeProps {}
+
+const Home: React.FC<HomeProps> = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     try {
-      const response = await POST('/api/auth/login', { email, password });
-      if (response.token) {
-        localStorage.setItem('token', response.token);
+      const usersResponse = await fetch('/data/users.json');
+      const usersData = await usersResponse.json();
+      const users = usersData.users;
+
+      const user = users.find((u: any) => u.email === email);
+
+      if (user && bcrypt.compareSync(password, user.password)) { // Compare hashed password
+        localStorage.setItem('token', user.token);
         navigate('/bookdetails');
       } else {
-        setErrorMessage(response.message || 'Failed to log in');
+        setErrorMessage('Invalid email or password');
       }
     } catch (error) {
       console.error('Login failed', error);
-      if (error instanceof Error) {
-        setErrorMessage(error.message || 'Login failed due to an unexpected error');
-      } else {
-        setErrorMessage('Login failed due to an unexpected error');
-      }
+      setErrorMessage('Login failed due to an unexpected error');
     }
   };
 
   const handleRegister = async () => {
     try {
-      const response = await POST('/auth/register', { email, password });
-      if (response.token) {
-        localStorage.setItem('token', response.token);
-        navigate('/bookdetails');
+      // Hash the password before sending to the server
+      const hashedPassword = bcrypt.hashSync(password, 10);
+
+      const response = await fetch('/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password: hashedPassword }), // Send hashed password
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          navigate('/bookdetails');
+        } else {
+          setErrorMessage('Failed to register');
+        }
       } else {
         setErrorMessage('Failed to register');
       }
@@ -44,25 +62,29 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
-      <h1>Welcome to Our HomePage</h1>
+      <h1>Welcome to Our Home Page</h1>
       <div>Login or Register to Continue</div>
       {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
-      <label>Email: </label>
-      <input
-        type="text"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <label>Password: </label>
-      <input
-        type="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={handleLogin}>Login</button>
-      <button onClick={handleRegister}>Register</button>
+      <form onSubmit={handleLogin}>
+        <label>Email: </label>
+        <input
+          type="text"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <label>Password: </label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button type="submit">Login</button>
+        <button type="button" onClick={handleRegister}>
+          Register
+        </button>
+      </form>
     </div>
   );
 };
 
-export default HomePage;
+export default Home;

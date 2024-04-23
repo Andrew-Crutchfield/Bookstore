@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { fetchData } from '../services/fetcher';
 import { Link } from 'react-router-dom';
-import { GET } from '../services/fetcher';
+
 
 interface Book {
   id: number;
@@ -21,48 +22,44 @@ const BookDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const booksResponse = await GET<{ books: Book[] }>('/api/books');
-        setBooks(booksResponse.books);
-
-        const categoriesResponse = await GET<{ categories: Category[] }>('/api/categories');
-        setCategories(categoriesResponse.categories);
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching data', error);
-      }
-    };
-
-    fetchData();
+    fetchData().then(data => {
+      setBooks(data.booksData);
+      setCategories(data.categoriesData);
+      setLoading(false);
+    }).catch(error => {
+      console.error('Error fetching data', error);
+      setLoading(false);
+    });
   }, []);
 
-  const hasToken = localStorage.getItem('token');
-
   const getCategoryName = (categoryId: number): string => {
-    const category = categories.find((c) => c.id === categoryId);
+    const category = categories.find(c => c.id === categoryId);
     return category ? category.name : 'Unknown Category';
   };
 
   return (
     <div>
+      <h1>Book Listing</h1>
+      <Link to="/booklisting">Go to Book Details</Link>
       <h1>All Books</h1>
       {loading ? (
         <p>Loading...</p>
       ) : (
-        <div>
-          {books.map((book) => (
-            <div key={book.id}>
-              <h2>{book.title}</h2>
-              <p>Author: {book.author}</p>
-              <p>Price: ${book.price}</p>
-              <p>Category: {getCategoryName(book.categoryid)}</p>
-            </div>
-          ))}
-        </div>
+        books.length > 0 ? (
+          <div>
+            {books.map(book => (
+              <div key={book.id}>
+                <h2>{book.title}</h2>
+                <p>Author: {book.author}</p>
+                <p>Price: ${book.price}</p>
+                <p>Category: {getCategoryName(book.categoryid)}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>No books found.</p>
+        )
       )}
-      {hasToken && <Link to="/booklisting">Go to Book Listing</Link>}
     </div>
   );
 };

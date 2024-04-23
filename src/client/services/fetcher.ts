@@ -1,4 +1,4 @@
-import Swal from 'sweetalert2';
+import { Book, Category } from '../types'; // Adjust the path as needed to correctly point to your types/index.ts file
 
 type ValidMethods = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -21,45 +21,50 @@ async function fetcher<T>(url: string, method: ValidMethods = 'GET', rawData?: a
   }
 
   try {
-    const apiUrl = process.env.SERVER_URL || 'http://localhost:3000';
-    console.debug(apiUrl+url);
-    console.debug(options);
-    const res = await fetch(apiUrl + url, options);
+    const res = await fetch(url, options);
 
     if (!res.ok) {
-      const errorData = await res.json();
-
-      console.error(`Request to ${url} failed with status ${res.status}`);
-      console.error(errorData);
-
-      Swal.fire({
-        title: 'Server error :(',
-        icon: 'error',
-        text: errorData.message || 'Unknown error',
-        timer: 6000,
-      });
-
-      throw new Error(errorData.message || 'Request failed');
+      throw new Error(`Error fetching data: ${res.status} ${res.statusText}`);
     }
 
-    return res.json() as Promise<T>;
+    const contentType = res.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Response is not in JSON format');
+    }
+
+    return await res.json() as T;
   } catch (error) {
-    const err = error as Error;
-    console.error(`Network error during request to ${url}`);
-    console.error(err);
-
-    Swal.fire({
-      title: 'Networking error :(',
-      icon: 'error',
-      text: err.message || 'Unknown error',
-      timer: 6000,
-    });
-
-    throw err;
+    throw error;
   }
 }
 
-export const GET = <T>(url: string) => fetcher<T>(url);
-export const DELETE = <T>(url: string) => fetcher<T>(url, 'DELETE');
-export const POST = <T>(url: string, data: any) => fetcher<T>(url, 'POST', data);
-export const PUT = <T>(url: string, data: any) => fetcher<T>(url, 'PUT', data);
+export const GET = async <T>(url: string): Promise<T> => {
+  return fetcher<T>(url);
+};
+
+export const DELETE = async <T>(url: string): Promise<T> => {
+  return fetcher<T>(url, 'DELETE');
+};
+
+export const POST = async <T>(url: string, data: any): Promise<T> => {
+  return fetcher<T>(url, 'POST', data);
+};
+
+export const PUT = async <T>(url: string, data: any): Promise<T> => {
+  return fetcher<T>(url, 'PUT', data);
+};
+
+export const fetchData = async () => {
+  try {
+    const booksData = await GET<Book[]>('/data/books.json');
+    console.log('Books data:', booksData);
+
+    const categoriesData = await GET<Category[]>('/data/categories.json');
+    console.log('Categories data:', categoriesData);
+
+    return { booksData, categoriesData };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+};
